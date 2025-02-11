@@ -1,0 +1,141 @@
+
+'''
+CONSTANTS - TO ADD TO UTILS/CONSTANTS.PY LATER
+'''
+'''
+DONE CONSTANTS
+'''
+import ast
+import ast_utils
+import textwrap
+from utils import emptyOrSpacesOnly, jaccard_similarity
+from constants import (MAX_LINES_OF_CODE, 
+                       MAX_PARAMETER_COUNT, 
+                       MAX_JACCARD_SIMILARITY, 
+                       PY_METHOD_DEF, 
+                       SELF_PARAM_VALUE
+                       )
+
+
+class MethodAnalyzer():
+    def __init__(self, method_lst: list[str], start: int, end: int):
+        self.method_lst = method_lst
+        self.start = start
+        self.end = end
+        self.lines_of_code = self._set_lines_of_code()
+        self.param_count = self._set_param_count()
+        self.method_name = method_lst[0]
+    
+
+    def get_method_attributes(self):
+        return (self.method_name, 
+                self.start, 
+                self.end, 
+                self.lines_of_code, 
+                self.param_count)
+
+
+    def _set_lines_of_code(self):
+        count = len(self.method_lst)
+        for line in self.method_lst:
+            if emptyOrSpacesOnly(line):
+                count -= 1
+        return count
+
+
+    def _set_param_count(self):
+        ast_tree = ast.parse(textwrap.dedent('\n'.join(self.method_lst)))
+        param_names = ast_utils.get_param_names(ast_tree)
+        if SELF_PARAM_VALUE in param_names:
+            param_names.remove(SELF_PARAM_VALUE)
+        return len(param_names)
+
+
+class CodeAnalyzer():
+    def __init__(self, src_code: str):
+        self.src_code = src_code
+        self.method_lines = ast_utils.extract_method_lines(self.src_code)
+        self.method_analyzers = self._analyze_methods()
+
+
+    def get_long_methods(self):
+        # output = [(method_name, start, end, lines_of_code)]
+        long_methods = []
+        for method_obj in self.method_analyzers:
+            name, start, end, lines, _ = method_obj.get_method_attributes()
+            if lines > MAX_LINES_OF_CODE:
+                long_methods.append( (name, start, end, lines) )
+        return long_methods
+
+
+    def get_long_paramaters(self):
+        # returns methods that have too many parameters
+        # output = [(method_name, param_count)]
+        long_param_lst = []
+        for method_obj in self.method_analyzers:
+            name, start, *_, param_count = method_obj.get_method_attributes()
+            if param_count > MAX_PARAMETER_COUNT:
+                long_param_lst.append( (name, start, param_count) )
+        for method in long_param_lst:
+            print(method)
+        return long_param_lst
+
+
+    def get_similar_methods(self):
+        similar_methods = []
+        # get the methods as a list of strings, plus start/end lines
+        methods = self._extract_methods(self.method_lines)
+        for i in range(len(methods)):
+            start, end = self.method_lines[i]
+            methods[i] = ('\n'.join(methods[i]), start, end)
+
+        # then run jaccard on each (i,j) pair of method strings
+        compared_methods = self._compare_methods(methods)
+        for method in compared_methods:
+            *_, jaccard_val = method
+            if jaccard_val > MAX_JACCARD_SIMILARITY:
+                similar_methods.append(method)
+        # format (m1: str, m2: str, (start1, end1), (start2, end2))
+        return similar_methods
+
+
+    def _analyze_methods(self):
+        analyzers = []
+        collected_methods = self._extract_methods(self.method_lines)
+        for i in range(len(collected_methods)):
+            start, end = self.method_lines[i]
+            analyzers.append(MethodAnalyzer(collected_methods[i], start, end)) 
+        return analyzers
+    
+
+    def _extract_methods(self, method_lines):
+        src_code_lines = self.src_code.splitlines()
+        methods = []
+        for method_terminuses in method_lines:
+            start, end = method_terminuses
+            method = []
+            for i in range(start - 1, end):
+                method.append(src_code_lines[i])
+            methods.append(method)
+        return methods
+
+
+    def _compare_methods(self, methods_list):
+        length = len(methods_list)
+        compared_methods = []
+        # compare the (i,j) pairs of methods in list
+        for i in range(length - 1):
+            for j in range(i+1, length):
+                method1, start1, end1 = methods_list[i]
+                method2, start2, end2 = methods_list[j]
+                jaccard_value = jaccard_similarity(method1, method2)
+                compared_methods.append( 
+                    (method1,
+                     method2,
+                     (start1, end1),
+                     (start2, end2),
+                     jaccard_value )
+                )
+        return compared_methods
+
+        # return with format (m1: str, m2: str, (start1, end1), (start2, end2), JACCARD)

@@ -144,6 +144,15 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# pyenv
+*.lock
+
+# test files
+code_analysis_test.py
+other.py
+test.py
+test_refactor.py
+
 # PyCharm
 #  JetBrains specific template is maintainted in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
