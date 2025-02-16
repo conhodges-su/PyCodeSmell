@@ -161,9 +161,8 @@ class SimpleGUI():
 
 
     def _clear_input_elements(self):
-        self.window['-METHODS-'].update(values=[])
-        self.window['-PARAMS-'].update(values=[])
-        self.window['-DUPES-'].update(values=[])
+        for elem in ['-METHODS-', '-PARAMS-', '-DUPES-']:
+            self.window[elem].update(values=[])
     
 
     def _jump_to_selected_line(self, selected):
