@@ -74,7 +74,8 @@ class SimpleGUI():
             [sg.Text(f'Long Paramter Lists (PARAMS > {MAX_PARAMETER_COUNT})', text_color='white', background_color='magenta', font=BOLD_FONT)],
             [sg.Listbox(values=[], size=(60,5), key='-PARAMS-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
             [sg.Text('Duplicate Methods', text_color='white', background_color='magenta', font=BOLD_FONT)],
-            [sg.Listbox(values=[], size=(60,5), key='-DUPES-', select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)]
+            [sg.Listbox(values=[], size=(60,5), key='-DUPES-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
+            [sg.Button('Refactor Code', key='-REFACTOR-')]
         ]
         self.layout = [ 
             [sg.Text('Code Smell Detector', font=BOLD_FONT)],
@@ -104,9 +105,11 @@ class SimpleGUI():
                 self.load_file(values['-FILEINPUT-'])
             if event == '-ANALYZE-':
                 self.analyze_code()
-            if event in ('-METHODS-','-PARAMS-'):
-                selected = values['-METHODS-'] if event == '-METHODS-' else values['-PARAMS-']
+            if event in ('-METHODS-','-PARAMS-', '-DUPES-'):
+                selected = values[event]
                 self._jump_to_selected_line(selected)
+            if event == '-REFACTOR-':
+                self._refactor_code()
         self.window.close()
     
 
@@ -155,9 +158,7 @@ class SimpleGUI():
 
         self.long_methods = self.code_analyzer.get_long_methods()
         self.long_param_lists = self.code_analyzer.get_long_paramaters()
-
-        # retrieve duplicate code
-        # self.duplicate_code = self.code_analyzer.get_similar_methods()       
+        self.duplicate_code = self.code_analyzer.get_similar_methods()       
 
 
     def _clear_input_elements(self):
@@ -190,8 +191,28 @@ class SimpleGUI():
         self.window['-PARAMS-'].update(values=param_lst)
 
         # update the dupe code ListBox
-        # TODO
-        pass
+        method_lst = self._format_duplicate_methods()
+        self.window['-DUPES-'].update(values=method_lst)
+    
+
+    def _format_duplicate_methods(self):
+        count = 0
+        method_lst = []
+        for dupe_rows in self.duplicate_code:
+            m1, m2, t1, t2, jaccard_val = dupe_rows
+            m1 = m1.splitlines()[0]
+            m2 = m2.splitlines()[0]
+            method_lst.append(f'LINE: {t1[0]}, {count+1}. {m1}')
+            method_lst.append(f'LINE: {t2[0]}, {count+1}. {m2}')
+            count += 1
+        return method_lst
+
+    def _refactor_code(self):
+        if self.duplicate_code:
+            sg.popup(f'Refactored code output to:\n{os.getcwd()}')
+        else:
+            # sg.popup(f'Refactored code output to:\n{os.getcwd()}')
+            sg.popup('No duplicate code to refactor!')
 
 if __name__ == '__main__':
     gui = SimpleGUI()
