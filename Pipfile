@@ -5,6 +5,8 @@ name = "pypi"
 
 [packages]
 pysimplegui = "*"
+python-dotenv = "*"
+openai = "*"
 
 [dev-packages]
 
