@@ -13,13 +13,12 @@ class ParameterVisitor(ast.NodeVisitor):
      def __init__(self):
           self.parameters = []
 
-
      def visit_FunctionDef(self, node):
           for arg in node.args.args:   
             self.parameters.append(arg.arg)
+       
           
 def get_param_names(ast_code_tree):
     param_visitor = ParameterVisitor()
     param_visitor.visit(ast_code_tree)
-    return param_visitor.parameters
-    
+    return param_visitor.parameters 
