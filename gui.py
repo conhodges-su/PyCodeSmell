@@ -1,6 +1,5 @@
 import PySimpleGUI as sg
 import os
-import threading
 from analyzers import CodeAnalyzer
 from refactor import CodeRefactorer
 from constants import (CODE_FONT, 
