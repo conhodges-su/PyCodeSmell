@@ -1,39 +1,6 @@
-'''
-https://docs.pysimplegui.com/en/latest/cookbook/ecookbook/
-CAN INSTALL WITH CONDA 
-
-managing ENVS
-https://www.rootstrap.com/blog/how-to-manage-your-python-projects-with-pipenv-pyenv
-https://thepythoncorner.com/posts/2022-05-07-managing-python-versions-with-pyenv/ 
-
-https://stackoverflow.com/questions/51863225/pyenv-python-command-not-found 
-
-tk-inter fix: do `brew install python-tk`
-https://stackoverflow.com/questions/59987762/python-tkinter-modulenotfounderror-no-module-named-tkinter
-
-'''
-
-'''
-IDEAS
-- long method
-    - [x] AST but likely raw string review of finding each function "def" and comparing each
-    - [x] NOPE - need to remove docstring code
-- long params
-    - [x] AST directly with the len(node.args.args) > 3
-    - include `self` in length?
-- dupe code
-    - [ ] learn about jaccard
-            - https://stackoverflow.com/questions/11911252/python-jaccard-distance-using-word-intersection-but-not-character-intersection 
-    - Dupe code across classes? Or just top-level functions?
-            
-- GUI
-    - [x] PySimpleGui
-    - [x] add line # to multi line text input on code loading
-    - [x] add text highlighting for long method/param/dupe code
-'''
-
 import PySimpleGUI as sg
 import os
+import threading
 from analyzers import CodeAnalyzer
 from refactor import CodeRefactorer
 from constants import (CODE_FONT, 
@@ -44,24 +11,14 @@ from constants import (CODE_FONT,
                        MAX_LINES_OF_CODE, 
                        MAX_PARAMETER_COUNT
                        )
-'''
-CONSTANTS 
--- ADD TO SEPARATE UTILS/CONSTANTS.PY FILE
-'''
 
-# def is_hidden(fname):
-#     return os.path.basename(fname).startswith('.')
-'''
-END CONSTANTS
-'''
-
-### TODO
 '''
 - DONE add line number to code output for easier reading, https://docs.pysimplegui.com/en/latest/cookbook/ecookbook/elements/multiline-text-output-with-multiple-colors/ 
 - DONE update layout when selecting long methods/params from box to highlight the text
-- display the duplicate methods
-- add button for producing refactored code
-- build refactoring class
+- DONE display the duplicate methods
+- DONE add button for producing refactored code
+- DONE build refactoring class
+- decide to continue using LLM for code update, or do it directly to speed up
 '''
 
 class SimpleGUI():
@@ -88,6 +45,7 @@ class SimpleGUI():
         ]
         self.window = sg.Window('Code Smell Detector', self.layout, size=(1300,700))
         self.src_code = ''
+        self.filename = ''
         self.code_analyzed = False
         self.code_analyzer = None
         self.long_methods = []
@@ -118,6 +76,7 @@ class SimpleGUI():
         if filetype != PY_FILE:
             sg.popup('ONLY SUPPORTS .PY FILES!')
         else:
+            self.filename = filename
             try:
                 with open(filename) as file_handle:
                     self.src_code = file_handle.read()
@@ -162,6 +121,7 @@ class SimpleGUI():
 
 
     def _clear_input_elements(self):
+        self.filename = ''
         for elem in ['-METHODS-', '-PARAMS-', '-DUPES-']:
             self.window[elem].update(values=[])
     
@@ -202,17 +162,32 @@ class SimpleGUI():
             m1, m2, t1, t2, jaccard_val = dupe_rows
             m1 = m1.splitlines()[0]
             m2 = m2.splitlines()[0]
-            method_lst.append(f'LINE: {t1[0]}, {count+1}. {m1}')
-            method_lst.append(f'LINE: {t2[0]}, {count+1}. {m2}')
+            method_lst.append(f'LINE: {t1[0]}, #{count+1}. {m1}')
+            method_lst.append(f'LINE: {t2[0]}, #{count+1}. {m2}')
             count += 1
         return method_lst
 
     def _refactor_code(self):
         if self.duplicate_code:
+            refactorer = CodeRefactorer(self.src_code, self.duplicate_code)
+            refactored_code = refactorer.produce_refactored_code()
+            self._write_refactored_code_to_file(refactored_code)
             sg.popup(f'Refactored code output to:\n{os.getcwd()}')
         else:
-            # sg.popup(f'Refactored code output to:\n{os.getcwd()}')
             sg.popup('No duplicate code to refactor!')
+    
+
+    def _write_refactored_code_to_file(self, refactored_code):
+        updated_filename = self.filename.split('.')[0] + '_refactor.py'
+        print(updated_filename)
+        try:
+            with open(updated_filename, 'w') as file:
+                file.write(refactored_code)
+        except SyntaxError as e:
+            print(e)
+        except OSError as e:
+            print(e)
+    
 
 if __name__ == '__main__':
     gui = SimpleGUI()

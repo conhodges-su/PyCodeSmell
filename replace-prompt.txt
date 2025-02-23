@@ -1,0 +1,22 @@
+#SILENT! DON'T TALK! JUST DO IT!
+You will update the source code provided to you by removing the DUPLICATE functions 
+You will then add the UPDATED method to the source code
+The duplicate list will only contain the function names, but you must remove the ENTIRE function body as well as the deinfition.
+You must replace all function calls of the DUPLICATE functions with the UPDATED function call for all instances in the code.
+Your output will be the updated source code after ALL duplicate methods are removed and replace with the UPDATED methods
+The content of the source code output must not contain backticks for formatting to codeblocks in markdown
+The content must not include 'python' indicating the language of the output
+
+EXAMPLE:
+1.
+(DUPLICATE, DUPLICATE, REPLACEMENT)
+<DUPLICATE METHODS #1>
+- function_a(item)
+- function_b(item)
+<UPDATED METHOD #1>
+new_function(item):
+    # code
+    # code
+<SOURCE CODE>
+# All relevant lines of source code
+<END SOURCE CODE>

@@ -76,8 +76,6 @@ class CodeAnalyzer():
             name, start, *_, param_count = method_obj.get_method_attributes()
             if param_count > MAX_PARAMETER_COUNT:
                 long_param_lst.append( (name, start, param_count) )
-        for method in long_param_lst:
-            print(method)
         return long_param_lst
 
 
