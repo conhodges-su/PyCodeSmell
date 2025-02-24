@@ -152,6 +152,7 @@ code_analysis_test.py
 other.py
 test.py
 test_refactor.py
+.DS*
 
 # PyCharm
 #  JetBrains specific template is maintainted in a separate JetBrains.gitignore that can
