@@ -98,7 +98,7 @@ class CodeRefactorer():
     
     def _remove_duplicate_code(self):
         to_remove = sorted(self._get_remove_termini(), key=itemgetter(0))
-        tuple_generator = yield_list_items(to_remove)
+        tuple_generator = iter(to_remove)
         refeactored_code_lines = self._add_non_duplicate_code(tuple_generator)
         self.updated_src_code = '\n'.join(refeactored_code_lines)
         
