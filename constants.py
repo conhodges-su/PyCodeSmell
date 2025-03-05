@@ -12,4 +12,4 @@ MAX_PARAMETER_COUNT = 3
 MAX_JACCARD_SIMILARITY = 0.75
 
 REFACTOR_PROMPT_FILE = 'refactor-prompt.txt'
-REPLACE_PROMPT_FILE = 'replace-prompt.txt'
+SEMANTIC_DUPE_PROMPT_FILE = 'semantic-dupe-prompt.txt'

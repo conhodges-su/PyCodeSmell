@@ -8,12 +8,14 @@ DONE CONSTANTS
 import ast
 import ast_utils
 import textwrap
-from utils import emptyOrSpacesOnly, jaccard_similarity
+from utils import emptyOrSpacesOnly, jaccard_similarity, get_prompt_string
+from llm import LLMRequest
 from constants import (MAX_LINES_OF_CODE, 
                        MAX_PARAMETER_COUNT, 
                        MAX_JACCARD_SIMILARITY, 
                        PY_METHOD_DEF, 
-                       SELF_PARAM_VALUE
+                       SELF_PARAM_VALUE,
+                       SEMANTIC_DUPE_PROMPT_FILE
                        )
 
 
@@ -91,7 +93,7 @@ class CodeAnalyzer():
         compared_methods = self._compare_methods(methods)
         for method in compared_methods:
             *_, jaccard_val = method
-            if jaccard_val > MAX_JACCARD_SIMILARITY:
+            if jaccard_val >= MAX_JACCARD_SIMILARITY:
                 similar_methods.append(method)
         # format (m1: str, m2: str, (start1, end1), (start2, end2))
         return similar_methods
@@ -137,3 +139,27 @@ class CodeAnalyzer():
         return compared_methods
 
         # return with format (m1: str, m2: str, (start1, end1), (start2, end2), JACCARD)
+    
+
+    def semantic_dupe_check(self):
+        return self._llm_semantic_dupe_check()
+
+
+    def _llm_semantic_dupe_check(self):
+        devPrompt = get_prompt_string(SEMANTIC_DUPE_PROMPT_FILE)
+        print(devPrompt)
+        completion = LLMRequest.sendRequest(devPrompt, self.src_code, 'gpt-4o')
+        semantic_dupe_string = completion.choices[0].message.content
+        semantic_dupe_list = semantic_dupe_string.splitlines()
+        for index, value in enumerate(semantic_dupe_list):
+            m1, m2 = value.split('|')
+            m1 = textwrap.dedent(m1)
+            m2 = textwrap.dedent(m2)
+            semantic_dupe_list[index] = (m1, m2)
+        return semantic_dupe_list
+
+
+
+
+
+

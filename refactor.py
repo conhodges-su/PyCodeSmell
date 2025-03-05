@@ -1,16 +1,16 @@
 import os
 import re
 from dotenv import load_dotenv, dotenv_values
-from constants import REFACTOR_PROMPT_FILE, REPLACE_PROMPT_FILE
-from utils import get_prompt_string, yield_list_items
+from constants import REFACTOR_PROMPT_FILE
+from utils import get_prompt_string
 from operator import itemgetter
-from openai import OpenAI
-load_dotenv()
-OPEN_API_KEY = os.getenv('OPEN_API_KEY')
+# from openai import OpenAI
+# load_dotenv()
+# OPEN_API_KEY = os.getenv('OPEN_API_KEY')
+from llm import LLMRequest
 
 '''
 TODO
-- cleanup old refactoring code that uses LLM instead of iterating over code
 - remove replace prompt.txt
 - remove constants that use the replace prompt file
 '''
@@ -86,15 +86,7 @@ class CodeRefactorer():
     
 
     def _get_llm_request(self, prompt, request):
-        client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-        completion = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "developer", "content": f"{prompt}"},
-                {"role": "user", "content": f"{request}"}
-            ]
-        )
-        return completion
+        return LLMRequest.sendRequest(prompt, request)
     
     def _remove_duplicate_code(self):
         to_remove = sorted(self._get_remove_termini(), key=itemgetter(0))
@@ -114,7 +106,9 @@ class CodeRefactorer():
         old_to_new_mapping = self._get_old_to_new_mapping()
         # add all keys to regex pattern w/ OR, matching whole words, 
         # with lookahead to confirm function call
-        pattern = r'\b(' + '|'.join(map(re.escape, old_to_new_mapping.keys())) + r')\b(?=\()'
+        pattern = r'\b(' + \
+                  '|'.join(map(re.escape, old_to_new_mapping.keys())) + \
+                  r')\b(?=\()'
         self.updated_src_code = re.sub(
             pattern, 
             lambda match: old_to_new_mapping[match.group(1)], 
@@ -131,7 +125,7 @@ class CodeRefactorer():
         return old_to_new_mapping
 
 
-    def _add_non_duplicate_code(self,tuple_generator):
+    def _add_non_duplicate_code(self, tuple_generator):
         code_lines = self.src_code.splitlines()
         new_code_lines = []
         start, end = next(tuple_generator)

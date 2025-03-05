@@ -20,8 +20,3 @@ def get_prompt_string(prompt_file):
         return ''
     else:
         return prompt_str
-
-
-def yield_list_items(input_list):
-     for item in input_list:
-          yield item

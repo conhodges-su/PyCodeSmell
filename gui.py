@@ -12,12 +12,8 @@ from constants import (CODE_FONT,
                        )
 
 '''
-- DONE add line number to code output for easier reading, https://docs.pysimplegui.com/en/latest/cookbook/ecookbook/elements/multiline-text-output-with-multiple-colors/ 
-- DONE update layout when selecting long methods/params from box to highlight the text
-- DONE display the duplicate methods
-- DONE add button for producing refactored code
-- DONE build refactoring class
-- decide to continue using LLM for code update, or do it directly to speed up
+- add file name to the popup message for the refactored code
+- add LLM semantic dupe check to the code
 '''
 
 class SimpleGUI():
@@ -31,6 +27,8 @@ class SimpleGUI():
             [sg.Listbox(values=[], size=(60,5), key='-PARAMS-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
             [sg.Text('Duplicate Methods', text_color='white', background_color='magenta', font=BOLD_FONT)],
             [sg.Listbox(values=[], size=(60,5), key='-DUPES-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
+            [sg.Text('Semantic Duplicates', text_color='white', background_color='magenta', font=BOLD_FONT)],
+            [sg.Listbox(values=[], size=(60,5), key='-SEMANTIC-DUPES-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
             [sg.Button('Refactor Code', key='-REFACTOR-')]
         ]
         self.layout = [ 
@@ -40,16 +38,18 @@ class SimpleGUI():
             [sg.Push(), sg.Multiline(size=(100, 30), key='-MINPUT-', horizontal_scroll=True, write_only=True, font=CODE_FONT), sg.Push(),
              sg.vtop(sg.Column(self.col)), sg.Push()],
             [sg.Text('')],
-            [sg.Push(), sg.Button('Analyze Code', key='-ANALYZE-'), sg.Button('Exit'), sg.Push()]
+            [sg.Push(), sg.Button('Analyze Code', key='-ANALYZE-'), sg.Button('Semantic Dupe Check', key='-SEMANTIC-'), sg.Button('Exit'), sg.Push()]
         ]
         self.window = sg.Window('Code Smell Detector', self.layout, size=(1300,700))
         self.src_code = ''
         self.filename = ''
         self.code_analyzed = False
+        self.semantic_checked = False
         self.code_analyzer = None
         self.long_methods = []
         self.long_param_lists = []
         self.duplicate_code = []
+        self.semantic_dupes = []
  
 
     def show(self):
@@ -62,6 +62,8 @@ class SimpleGUI():
                 self.load_file(values['-FILEINPUT-'])
             if event == '-ANALYZE-':
                 self.analyze_code()
+            if event == '-SEMANTIC-':
+                self.identify_semantic_dupes()
             if event in ('-METHODS-','-PARAMS-', '-DUPES-'):
                 selected = values[event]
                 self._jump_to_selected_line(selected)
@@ -82,6 +84,7 @@ class SimpleGUI():
                     contents = self.get_code_with_linenums() + '\n\n\n'
                     self.window['-MINPUT-'].update(value=contents)
                     self.code_analyzed = False
+                    self.semantic_checked = False
             except SyntaxError as e:
                 print(e)
             except OSError as e:
@@ -111,12 +114,23 @@ class SimpleGUI():
             sg.popup('This code is already analyzed!')
     
 
+    def identify_semantic_dupes(self):
+        if not self.code_analyzed:
+            sg.popup('Analyze the code before checking for semantic duplicates!')
+        elif not self.semantic_checked:
+            self.semantic_dupes = self.code_analyzer.semantic_dupe_check()
+            self._display_code_metrics()
+            self.code_analyzed = True
+        else:
+            sg.popup('Already checked for semantic code')
+
     def _get_code_metrics(self):
         self.code_analyzer = CodeAnalyzer(self.src_code)
-
         self.long_methods = self.code_analyzer.get_long_methods()
         self.long_param_lists = self.code_analyzer.get_long_paramaters()
-        self.duplicate_code = self.code_analyzer.get_similar_methods()       
+        self.duplicate_code = self.code_analyzer.get_similar_methods()
+        for pair in self.duplicate_code:
+            print(pair)       
 
 
     def _clear_input_elements(self):
@@ -152,6 +166,9 @@ class SimpleGUI():
         # update the dupe code ListBox
         method_lst = self._format_duplicate_methods()
         self.window['-DUPES-'].update(values=method_lst)
+
+        semantic_dupes_formatted = [' | '.join(pair) for pair in self.semantic_dupes]
+        self.window['-SEMANTIC-DUPES-'].update(values=semantic_dupes_formatted)
     
 
     def _format_duplicate_methods(self):
@@ -170,15 +187,14 @@ class SimpleGUI():
         if self.duplicate_code:
             refactorer = CodeRefactorer(self.src_code, self.duplicate_code)
             refactored_code = refactorer.produce_refactored_code()
-            self._write_refactored_code_to_file(refactored_code)
-            sg.popup(f'Refactored code output to:\n{os.getcwd()}')
+            filename = self._write_refactored_code_to_file(refactored_code)
+            sg.popup(f'FILE: {filename}\nRefactored code output to:\n{os.getcwd()}', title='Code Output')
         else:
             sg.popup('No duplicate code to refactor!')
     
 
     def _write_refactored_code_to_file(self, refactored_code):
         updated_filename = self.filename.split('.')[0] + '_refactor.py'
-        print(updated_filename)
         try:
             with open(updated_filename, 'w') as file:
                 file.write(refactored_code)
@@ -186,6 +202,8 @@ class SimpleGUI():
             print(e)
         except OSError as e:
             print(e)
+        finally:
+            return updated_filename.split('/')[-1]
     
 
 if __name__ == '__main__':
