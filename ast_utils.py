@@ -1,5 +1,8 @@
 import ast
 
+def tree_parse(my_string):
+     return ast.parse(my_string)
+
 def extract_method_lines(src_code):
         methods = []
         tree = ast.parse(src_code)

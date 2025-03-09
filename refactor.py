@@ -1,57 +1,26 @@
 import os
 import re
-from dotenv import load_dotenv, dotenv_values
+# from dotenv import load_dotenv, dotenv_values
 from constants import REFACTOR_PROMPT_FILE
 from utils import get_prompt_string
 from operator import itemgetter
-# from openai import OpenAI
-# load_dotenv()
-# OPEN_API_KEY = os.getenv('OPEN_API_KEY')
 from llm import LLMRequest
 
-'''
-TODO
-- remove replace prompt.txt
-- remove constants that use the replace prompt file
-'''
 
 class CodeRefactorer():
-    def __init__(self, src_code, dupe_code_list):
+    def __init__(self, src_code: str, dupe_code_list: list[tuple[str, str, tuple[int, int], tuple[int, int], int]]):
         self.src_code = src_code
         self.updated_src_code = ''
-        self.dupe_code_list = dupe_code_list  #[(m1,m2,(start1,end1),(start2,end2),jaccard)]
+        self.dupe_code_list = dupe_code_list 
         self.refactored_code = []
     
 
     def produce_refactored_code(self):
         self._refactor_duplicate_code()
-        # self._replace_old_code()
-        # return self.updated_src_code
         self._remove_duplicate_code()
         self._add_refactored_code()
         self._replace_function_calls()
         return self.updated_src_code
-    
-
-    # def _replace_old_code(self):
-    #     replace_prompt = get_prompt_string(REPLACE_PROMPT_FILE)
-    #     replace_request = self._get_prompt_request_body()
-    #     completion = self._get_llm_request(replace_prompt, replace_request)
-    #     self.updated_src_code = completion.choices[0].message.content
-    
-
-    # def _get_prompt_request_body(self):
-    #     replace_request = ''
-    #     for i in range(len(self.dupe_code_list)):
-    #         replace_request += f'{i+1}.\n'
-    #         m1, m2, replacement = self._extract_function_names(i)
-    #         replace_request += f'({m1}, {m2}, {replacement})\n'
-    #         replace_request += f'<DUPLICATE METHODS #{i+1}>\n'
-    #         replace_request += f'- {m1}\n- {m2}\n'
-    #         replace_request += f'<UPDATED METHOD #{i+1}>\n'
-    #         replace_request += f'{self.refactored_code[i]}\n'
-    #     replace_request += f'<SOURCE CODE>\n{self.src_code}\n<END SOURCE CODE>'
-    #     return replace_request
     
 
     def _extract_function_names(self, idx):
@@ -88,6 +57,7 @@ class CodeRefactorer():
     def _get_llm_request(self, prompt, request):
         return LLMRequest.sendRequest(prompt, request)
     
+
     def _remove_duplicate_code(self):
         to_remove = sorted(self._get_remove_termini(), key=itemgetter(0))
         tuple_generator = iter(to_remove)

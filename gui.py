@@ -2,45 +2,17 @@ import PySimpleGUI as sg
 import os
 from analyzers import CodeAnalyzer
 from refactor import CodeRefactorer
-from constants import (CODE_FONT, 
-                       BOLD_FONT, 
-                       GREY_TEXT, 
-                       PY_FILE, 
-                       MAX_FILE_LENGTH, 
-                       MAX_LINES_OF_CODE, 
-                       MAX_PARAMETER_COUNT
-                       )
+from constants import (CODE_FONT, BOLD_FONT, GREY_TEXT, PY_FILE,  
+                       MAX_LINES_OF_CODE, MAX_PARAMETER_COUNT)
 
-'''
-- add file name to the popup message for the refactored code
-- add LLM semantic dupe check to the code
-'''
 
 class SimpleGUI():
     sg.theme('GreenMono')
 
     def __init__(self):
-        self.col = [
-            [sg.Text(f'Long Methods (LOC > {MAX_LINES_OF_CODE})', text_color='white', background_color='magenta', font=BOLD_FONT)],
-            [sg.Listbox(values=[], size=(60,5), key='-METHODS-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
-            [sg.Text(f'Long Paramter Lists (PARAMS > {MAX_PARAMETER_COUNT})', text_color='white', background_color='magenta', font=BOLD_FONT)],
-            [sg.Listbox(values=[], size=(60,5), key='-PARAMS-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
-            [sg.Text('Duplicate Methods', text_color='white', background_color='magenta', font=BOLD_FONT)],
-            [sg.Listbox(values=[], size=(60,5), key='-DUPES-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
-            [sg.Text('Semantic Duplicates', text_color='white', background_color='magenta', font=BOLD_FONT)],
-            [sg.Listbox(values=[], size=(60,5), key='-SEMANTIC-DUPES-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
-            [sg.Button('Refactor Code', key='-REFACTOR-')]
-        ]
-        self.layout = [ 
-            [sg.Text('Code Smell Detector', font=BOLD_FONT)],
-            [sg.Push(), sg.Text('File', size=(8, 1)), sg.Input(key='-FILEINPUT-', default_text = 'Select file to analyze', text_color=GREY_TEXT), sg.FileBrowse(), sg.Button('Open', key='-FOPEN-'), sg.Push()],
-            [sg.Text('Code Display', text_color='white', background_color='magenta', font=BOLD_FONT)],
-            [sg.Push(), sg.Multiline(size=(100, 30), key='-MINPUT-', horizontal_scroll=True, write_only=True, font=CODE_FONT), sg.Push(),
-             sg.vtop(sg.Column(self.col)), sg.Push()],
-            [sg.Text('')],
-            [sg.Push(), sg.Button('Analyze Code', key='-ANALYZE-'), sg.Button('Semantic Dupe Check', key='-SEMANTIC-'), sg.Button('Exit'), sg.Push()]
-        ]
-        self.window = sg.Window('Code Smell Detector', self.layout, size=(1300,700))
+        self.col = self._column_list()
+        self.layout = self._layout_list()
+        self.window = sg.Window('Code Smell Detector', self.layout, size=(1300,750))
         self.src_code = ''
         self.filename = ''
         self.code_analyzed = False
@@ -50,28 +22,56 @@ class SimpleGUI():
         self.long_param_lists = []
         self.duplicate_code = []
         self.semantic_dupes = []
- 
+    
+
+    def _column_list(self):
+        return [
+            [sg.Text(f'Long Methods (LOC > {MAX_LINES_OF_CODE})', text_color='white', background_color='magenta', font=BOLD_FONT)],
+            [sg.Listbox(values=[], size=(60,5), key='-METHODS-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
+            [sg.Text(f'Long Paramter Lists (PARAMS > {MAX_PARAMETER_COUNT})', text_color='white', background_color='magenta', font=BOLD_FONT)],
+            [sg.Listbox(values=[], size=(60,5), key='-PARAMS-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
+            [sg.Text('Duplicate Methods', text_color='white', background_color='magenta', font=BOLD_FONT)],
+            [sg.Listbox(values=[], size=(60,5), key='-DUPES-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
+            [sg.Text('Semantic Duplicates', text_color='white', background_color='magenta', font=BOLD_FONT)],
+            [sg.Listbox(values=[], size=(60,8), key='-SEMANTIC-DUPES-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
+            [sg.Button('Refactor Code', key='-REFACTOR-')]  
+        ]
+
+
+    def _layout_list(self):
+        return [
+            [sg.Text('Code Smell Detector', font=BOLD_FONT)],
+            [sg.Push(), sg.Text('File', size=(8, 1)), sg.Input(key='-FILEINPUT-', default_text = 'Select file to analyze', text_color=GREY_TEXT), sg.FileBrowse(), sg.Button('Open', key='-FOPEN-'), sg.Push()],
+            [sg.Text('Code Display', text_color='white', background_color='magenta', font=BOLD_FONT)],
+            [sg.Push(), sg.Multiline(size=(100, 30), key='-MINPUT-', horizontal_scroll=True, write_only=True, font=CODE_FONT), sg.Push(), sg.vtop(sg.Column(self.col)), sg.Push()],
+            [sg.Text('')],
+            [sg.Push(), sg.Button('Analyze Code', key='-ANALYZE-'), sg.Button('Semantic Dupe Check', key='-SEMANTIC-'), sg.Button('Exit'), sg.Push()]
+        ]
 
     def show(self):
         while True:
             event, values = self.window.read()
             if event == sg.WIN_CLOSED or event == 'Exit':
                 break
-            if event == '-FOPEN-':
-                self._clear_input_elements()
-                self.load_file(values['-FILEINPUT-'])
-            if event == '-ANALYZE-':
-                self.analyze_code()
-            if event == '-SEMANTIC-':
-                self.identify_semantic_dupes()
-            if event in ('-METHODS-','-PARAMS-', '-DUPES-'):
-                selected = values[event]
-                self._jump_to_selected_line(selected)
-            if event == '-REFACTOR-':
-                self._refactor_code()
+            self._event_handler(event, values)
         self.window.close()
     
 
+    def _event_handler(self, event, values):
+        if event == '-FOPEN-':
+            self._clear_input_elements()
+            self.load_file(values['-FILEINPUT-'])
+        if event == '-ANALYZE-':
+            self.analyze_code()
+        if event == '-SEMANTIC-':
+            self.identify_semantic_dupes()
+        if event in ('-METHODS-','-PARAMS-', '-DUPES-'):
+            selected = values[event]
+            self._jump_to_selected_line(selected)
+        if event == '-REFACTOR-':
+            self._refactor_code()
+
+    
     def load_file(self, filename):
         *_, filetype = filename.split('.')
         if filetype != PY_FILE:
@@ -85,9 +85,7 @@ class SimpleGUI():
                     self.window['-MINPUT-'].update(value=contents)
                     self.code_analyzed = False
                     self.semantic_checked = False
-            except SyntaxError as e:
-                print(e)
-            except OSError as e:
+            except (SyntaxError, OSError) as e:
                 print(e)
     
 
@@ -105,7 +103,6 @@ class SimpleGUI():
             sg.popup('You must select and load a file before analyzing it!')
         elif self.src_code and not self.code_analyzed:
             self._get_code_metrics()
-
             self._display_code_metrics()
             self.code_analyzed = True
             if self.long_methods or self.long_param_lists or self.duplicate_code:
@@ -128,9 +125,7 @@ class SimpleGUI():
         self.code_analyzer = CodeAnalyzer(self.src_code)
         self.long_methods = self.code_analyzer.get_long_methods()
         self.long_param_lists = self.code_analyzer.get_long_paramaters()
-        self.duplicate_code = self.code_analyzer.get_similar_methods()
-        for pair in self.duplicate_code:
-            print(pair)       
+        self.duplicate_code = self.code_analyzer.get_similar_methods() 
 
 
     def _clear_input_elements(self):
@@ -155,20 +150,21 @@ class SimpleGUI():
 
 
     def _display_code_metrics(self):
-        # update the Long Methods ListBox
-        method_lst = [''.join(map(str, (f'LINE:{m[1]:>4}, DEF: ', m[0]))) for m in self.long_methods if self.long_methods]
+        method_lst = self._get_format_list(self.long_methods)
         self.window['-METHODS-'].update(values=method_lst)
 
-        # update the Long Params ListBox
-        param_lst = [''.join(map(str, (f'LINE:{p[1]:>4}, DEF: ', p[0]))) for p in self.long_param_lists if self.long_param_lists]
+        param_lst = self._get_format_list(self.long_param_lists)
         self.window['-PARAMS-'].update(values=param_lst)
 
-        # update the dupe code ListBox
         method_lst = self._format_duplicate_methods()
         self.window['-DUPES-'].update(values=method_lst)
 
-        semantic_dupes_formatted = [' | '.join(pair) for pair in self.semantic_dupes]
+        semantic_dupes_formatted = [elem for item in self.semantic_dupes for elem in item]
         self.window['-SEMANTIC-DUPES-'].update(values=semantic_dupes_formatted)
+    
+
+    def _get_format_list(self, format_list):
+        return [''.join(map(str, (f'LINE:{f[1]:>4}, DEF: {f[0]}', ))) for f in format_list if format_list]
     
 
     def _format_duplicate_methods(self):
