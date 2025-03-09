@@ -53,7 +53,8 @@ class SimpleGUI():
             event, values = self.window.read()
             if event == sg.WIN_CLOSED or event == 'Exit':
                 break
-            self._event_handler(event, values)
+            else:
+                self._event_handler(event, values)
         self.window.close()
     
 
@@ -61,14 +62,14 @@ class SimpleGUI():
         if event == '-FOPEN-':
             self._clear_input_elements()
             self.load_file(values['-FILEINPUT-'])
-        if event == '-ANALYZE-':
+        elif event == '-ANALYZE-':
             self.analyze_code()
-        if event == '-SEMANTIC-':
+        elif event == '-SEMANTIC-':
             self.identify_semantic_dupes()
-        if event in ('-METHODS-','-PARAMS-', '-DUPES-'):
+        elif event in ('-METHODS-','-PARAMS-', '-DUPES-'):
             selected = values[event]
             self._jump_to_selected_line(selected)
-        if event == '-REFACTOR-':
+        elif event == '-REFACTOR-':
             self._refactor_code()
 
     
