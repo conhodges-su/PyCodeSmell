@@ -26,10 +26,13 @@ class CodeRefactorer():
     def _extract_function_names(self, idx):
         m1, m2, *_ = self.dupe_code_list[idx]
         replacement = self.refactored_code[idx]
-        m1 = m1.split('def')[1].strip().split('(')[0]
-        m2 = m2.split('def')[1].strip().split('(')[0]
-        replacement = replacement.split('def')[1].strip().split('(')[0]
+        for method in (m1, m2, replacement):
+            method = self._get_func_name_only(method)
         return (m1, m2, replacement)
+
+
+    def _get_func_name_only(self, method):
+        return method.split('def')[1].strip().split('(')[0]
 
     
     def _refactor_duplicate_code(self):
@@ -45,7 +48,7 @@ class CodeRefactorer():
         methods_string_list = []
         for method_pair_data in self.dupe_code_list:
             methods_str = ''
-            m1, m2, termini1, termini2, jaccard = method_pair_data
+            m1, m2, *_ = method_pair_data
             methods_str += f'{METHOD_BOLD} 1:\n'
             methods_str += f'{m1}\n'
             methods_str += f'{METHOD_BOLD} 2:\n'
@@ -115,6 +118,7 @@ class CodeRefactorer():
         to_remove = []
         for dupe_line in self.dupe_code_list:
             _, _, termini1, termini2, _ = dupe_line
-            to_remove.append(termini1)
-            to_remove.append(termini2)
+            # to_remove.append(termini1)
+            # to_remove.append(termini2)
+            to_remove.extend([termini1, termini2])
         return to_remove

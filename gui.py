@@ -1,5 +1,6 @@
 import PySimpleGUI as sg
 import os
+from textwrap import dedent
 from analyzers import CodeAnalyzer
 from refactor import CodeRefactorer
 from constants import (CODE_FONT, BOLD_FONT, GREY_TEXT, PY_FILE,  
@@ -47,6 +48,7 @@ class SimpleGUI():
             [sg.Text('')],
             [sg.Push(), sg.Button('Analyze Code', key='-ANALYZE-'), sg.Button('Semantic Dupe Check', key='-SEMANTIC-'), sg.Button('Exit'), sg.Push()]
         ]
+
 
     def show(self):
         while True:
@@ -122,6 +124,7 @@ class SimpleGUI():
         else:
             sg.popup('Already checked for semantic code')
 
+
     def _get_code_metrics(self):
         self.code_analyzer = CodeAnalyzer(self.src_code)
         self.long_methods = self.code_analyzer.get_long_methods()
@@ -165,7 +168,7 @@ class SimpleGUI():
     
 
     def _get_format_list(self, format_list):
-        return [''.join(map(str, (f'LINE:{f[1]:>4}, DEF: {f[0]}', ))) for f in format_list if format_list]
+        return [''.join(map(str, (f'LINE:{f[1]:>4}, DEF: {dedent(f[0])}', ))) for f in format_list if format_list]
     
 
     def _format_duplicate_methods(self):
@@ -173,12 +176,13 @@ class SimpleGUI():
         method_lst = []
         for dupe_rows in self.duplicate_code:
             m1, m2, t1, t2, jaccard_val = dupe_rows
-            m1 = m1.splitlines()[0]
-            m2 = m2.splitlines()[0]
+            m1 = dedent(m1.splitlines()[0])
+            m2 = dedent(m2.splitlines()[0])
             method_lst.append(f'LINE: {t1[0]}, #{count+1}. {m1}')
             method_lst.append(f'LINE: {t2[0]}, #{count+1}. {m2}')
             count += 1
         return method_lst
+
 
     def _refactor_code(self):
         if self.duplicate_code:

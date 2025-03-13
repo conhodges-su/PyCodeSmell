@@ -67,7 +67,7 @@ class CodeAnalyzer():
 
     def get_similar_methods(self):
         similar_methods = []
-        methods = self._extract_methods(self.method_lines)
+        methods = self._extract_methods()
         for i in range(len(methods)):
             start, end = self.method_lines[i]
             methods[i] = ('\n'.join(methods[i]), start, end)
@@ -82,17 +82,17 @@ class CodeAnalyzer():
 
     def _analyze_methods(self):
         analyzers = []
-        collected_methods = self._extract_methods(self.method_lines)
+        collected_methods = self._extract_methods()
         for i in range(len(collected_methods)):
             start, end = self.method_lines[i]
             analyzers.append(MethodAnalyzer(collected_methods[i], start, end)) 
         return analyzers
     
 
-    def _extract_methods(self, method_lines):
+    def _extract_methods(self):
         src_code_lines = self.src_code.splitlines()
         methods = []
-        for method_terminuses in method_lines:
+        for method_terminuses in self.method_lines:
             start, end = method_terminuses
             method = []
             for i in range(start - 1, end):
