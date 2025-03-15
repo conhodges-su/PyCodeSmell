@@ -1,6 +1,4 @@
-import os
 import re
-# from dotenv import load_dotenv, dotenv_values
 from constants import REFACTOR_PROMPT_FILE
 from utils import get_prompt_string
 from operator import itemgetter
@@ -21,18 +19,6 @@ class CodeRefactorer():
         self._add_refactored_code()
         self._replace_function_calls()
         return self.updated_src_code
-    
-
-    def _extract_function_names(self, idx):
-        m1, m2, *_ = self.dupe_code_list[idx]
-        replacement = self.refactored_code[idx]
-        for method in (m1, m2, replacement):
-            method = self._get_func_name_only(method)
-        return (m1, m2, replacement)
-
-
-    def _get_func_name_only(self, method):
-        return method.split('def')[1].strip().split('(')[0]
 
     
     def _refactor_duplicate_code(self):
@@ -71,22 +57,21 @@ class CodeRefactorer():
     def _add_refactored_code(self):
         all_new_code = ''
         for new_code in self.refactored_code:
-            all_new_code += new_code + '\n'
+            all_new_code += new_code + '\n\n'
         self.updated_src_code = all_new_code + '\n' + self.updated_src_code
 
     
     def _replace_function_calls(self):
         old_to_new_mapping = self._get_old_to_new_mapping()
-        # add all keys to regex pattern w/ OR, matching whole words, 
-        # with lookahead to confirm function call
+        # add all keys to regex pattern w/ OR, matching whole words only, 
+        # with lookahead to confirm a function call
         pattern = r'\b(' + \
                   '|'.join(map(re.escape, old_to_new_mapping.keys())) + \
                   r')\b(?=\()'
         self.updated_src_code = re.sub(
             pattern, 
             lambda match: old_to_new_mapping[match.group(1)], 
-                          self.updated_src_code
-        )
+            self.updated_src_code)
     
 
     def _get_old_to_new_mapping(self):
@@ -97,6 +82,19 @@ class CodeRefactorer():
                                        old_func2 : new_func})
         return old_to_new_mapping
 
+
+    def _extract_function_names(self, idx):
+        func_names_only = []
+        m1, m2, *_ = self.dupe_code_list[idx]
+        replacement = self.refactored_code[idx]
+        for method in [m1, m2, replacement]:
+            func_names_only.append(self._get_func_name_only(method))
+        return func_names_only
+
+
+    def _get_func_name_only(self, method):
+        return method.split('def')[1].strip().split('(')[0]
+    
 
     def _add_non_duplicate_code(self, tuple_generator):
         code_lines = self.src_code.splitlines()
@@ -118,7 +116,5 @@ class CodeRefactorer():
         to_remove = []
         for dupe_line in self.dupe_code_list:
             _, _, termini1, termini2, _ = dupe_line
-            # to_remove.append(termini1)
-            # to_remove.append(termini2)
             to_remove.extend([termini1, termini2])
         return to_remove

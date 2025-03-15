@@ -32,10 +32,10 @@ class SimpleGUI():
             [sg.Text(f'Long Paramter Lists (PARAMS > {MAX_PARAMETER_COUNT})', text_color='white', background_color='magenta', font=BOLD_FONT)],
             [sg.Listbox(values=[], size=(60,5), key='-PARAMS-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
             [sg.Text('Duplicate Methods', text_color='white', background_color='magenta', font=BOLD_FONT)],
-            [sg.Listbox(values=[], size=(60,5), key='-DUPES-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
+            [sg.Listbox(values=[], size=(60,6), key='-DUPES-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
+            [sg.Button('Refactor Code', key='-REFACTOR-', disabled=True, disabled_button_color='grey')],  
             [sg.Text('Semantic Duplicates', text_color='white', background_color='magenta', font=BOLD_FONT)],
-            [sg.Listbox(values=[], size=(60,8), key='-SEMANTIC-DUPES-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
-            [sg.Button('Refactor Code', key='-REFACTOR-')]  
+            [sg.Listbox(values=[], size=(60,8), key='-SEMANTIC-DUPES-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)]
         ]
 
 
@@ -63,19 +63,21 @@ class SimpleGUI():
     def _event_handler(self, event, values):
         if event == '-FOPEN-':
             self._clear_input_elements()
-            self.load_file(values['-FILEINPUT-'])
+            self._load_file(values['-FILEINPUT-'])
         elif event == '-ANALYZE-':
-            self.analyze_code()
+            self._analyze_code()
+            self._check_if_duplicate_present()
+            self._prompt_to_refactor()
         elif event == '-SEMANTIC-':
-            self.identify_semantic_dupes()
+            self._identify_semantic_dupes()
         elif event in ('-METHODS-','-PARAMS-', '-DUPES-'):
             selected = values[event]
             self._jump_to_selected_line(selected)
         elif event == '-REFACTOR-':
             self._refactor_code()
 
-    
-    def load_file(self, filename):
+
+    def _load_file(self, filename):
         *_, filetype = filename.split('.')
         if filetype != PY_FILE:
             sg.popup('ONLY SUPPORTS .PY FILES!')
@@ -101,7 +103,7 @@ class SimpleGUI():
         return '\n'.join(code_with_line_nums)
     
 
-    def analyze_code(self):
+    def _analyze_code(self):
         if not self.src_code:
             sg.popup('You must select and load a file before analyzing it!')
         elif self.src_code and not self.code_analyzed:
@@ -109,12 +111,25 @@ class SimpleGUI():
             self._display_code_metrics()
             self.code_analyzed = True
             if self.long_methods or self.long_param_lists or self.duplicate_code:
-                sg.popup("Code smells found!")
+                sg.popup("Code smells found!")    
         else:
             sg.popup('This code is already analyzed!')
     
 
-    def identify_semantic_dupes(self):
+    def _check_if_duplicate_present(self):
+        is_disabled = False if self.duplicate_code else True
+        self.window['-REFACTOR-'].update(disabled=is_disabled)
+    
+
+    def _prompt_to_refactor(self):
+        if not self.duplicate_code:
+            return
+        choice = sg.popup_yes_no('Duplicate code detected, refactor?')
+        if choice == 'Yes':
+            self._refactor_code()
+
+
+    def _identify_semantic_dupes(self):
         if not self.code_analyzed:
             sg.popup('Analyze the code before checking for semantic duplicates!')
         elif not self.semantic_checked:
@@ -134,8 +149,11 @@ class SimpleGUI():
 
     def _clear_input_elements(self):
         self.filename = ''
-        for elem in ['-METHODS-', '-PARAMS-', '-DUPES-']:
+        for elem in ['-METHODS-', '-PARAMS-', '-DUPES-', '-SEMANTIC-DUPES-']:
             self.window[elem].update(values=[])
+        for value_arr in [self.duplicate_code, self.long_methods, self.long_param_lists, self.semantic_dupes]:
+            value_arr.clear()
+        self._check_if_duplicate_present()
     
 
     def _jump_to_selected_line(self, selected):
@@ -155,16 +173,14 @@ class SimpleGUI():
 
     def _display_code_metrics(self):
         method_lst = self._get_format_list(self.long_methods)
-        self.window['-METHODS-'].update(values=method_lst)
-
         param_lst = self._get_format_list(self.long_param_lists)
-        self.window['-PARAMS-'].update(values=param_lst)
-
-        method_lst = self._format_duplicate_methods()
-        self.window['-DUPES-'].update(values=method_lst)
-
+        dupe_lst = self._format_duplicate_methods()
         semantic_dupes_formatted = [elem for item in self.semantic_dupes for elem in item]
-        self.window['-SEMANTIC-DUPES-'].update(values=semantic_dupes_formatted)
+
+        fields_to_display = [(method_lst, '-METHODS-'), (param_lst, '-PARAMS-'),
+                           (dupe_lst, '-DUPES-'), (semantic_dupes_formatted, '-SEMANTIC-DUPES-')]
+        for item_list, key in fields_to_display:
+            self.window[key].update(values=item_list)
     
 
     def _get_format_list(self, format_list):
@@ -175,7 +191,7 @@ class SimpleGUI():
         count = 0
         method_lst = []
         for dupe_rows in self.duplicate_code:
-            m1, m2, t1, t2, jaccard_val = dupe_rows
+            m1, m2, t1, t2, _ = dupe_rows
             m1 = dedent(m1.splitlines()[0])
             m2 = dedent(m2.splitlines()[0])
             method_lst.append(f'LINE: {t1[0]}, #{count+1}. {m1}')
