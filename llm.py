@@ -1,5 +1,5 @@
 import os
-from dotenv import load_dotenv, dotenv_values
+from dotenv import load_dotenv
 from openai import OpenAI
 load_dotenv()
 OPEN_API_KEY = os.getenv('OPEN_API_KEY')

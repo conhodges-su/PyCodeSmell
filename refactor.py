@@ -49,8 +49,8 @@ class CodeRefactorer():
 
     def _remove_duplicate_code(self):
         to_remove = sorted(self._get_remove_termini(), key=itemgetter(0))
-        tuple_generator = iter(to_remove)
-        refeactored_code_lines = self._add_non_duplicate_code(tuple_generator)
+        to_remove_generator = iter(to_remove)
+        refeactored_code_lines = self._add_non_duplicate_code(to_remove_generator)
         self.updated_src_code = '\n'.join(refeactored_code_lines)
         
 
@@ -58,7 +58,7 @@ class CodeRefactorer():
         all_new_code = ''
         for new_code in self.refactored_code:
             all_new_code += new_code + '\n\n'
-        self.updated_src_code = all_new_code + '\n' + self.updated_src_code
+        self.updated_src_code = all_new_code + self.updated_src_code
 
     
     def _replace_function_calls(self):
@@ -96,17 +96,17 @@ class CodeRefactorer():
         return method.split('def')[1].strip().split('(')[0]
     
 
-    def _add_non_duplicate_code(self, tuple_generator):
+    def _add_non_duplicate_code(self, to_remove_generator):
         code_lines = self.src_code.splitlines()
         new_code_lines = []
-        start, end = next(tuple_generator)
+        start, end = next(to_remove_generator)
         for i in range(len(code_lines)):
             if i < start - 1:
                 new_code_lines.append(code_lines[i])
             elif i == end:
                 new_code_lines.append(code_lines[i])
                 try:
-                    start, end = next(tuple_generator)
+                    start, end = next(to_remove_generator)
                 except StopIteration:
                     start = float('inf')
         return new_code_lines

@@ -86,7 +86,7 @@ class SimpleGUI():
             try:
                 with open(filename) as file_handle:
                     self.src_code = file_handle.read()
-                    contents = self.get_code_with_linenums() + '\n\n\n'
+                    contents = self._get_code_with_linenums() + '\n\n\n'
                     self.window['-MINPUT-'].update(value=contents)
                     self.code_analyzed = False
                     self.semantic_checked = False
@@ -94,7 +94,7 @@ class SimpleGUI():
                 print(e)
     
 
-    def get_code_with_linenums(self):
+    def _get_code_with_linenums(self):
         code_with_line_nums = []
         code_lines = self.src_code.splitlines()
         for i in range(len(code_lines)):
@@ -111,7 +111,9 @@ class SimpleGUI():
             self._display_code_metrics()
             self.code_analyzed = True
             if self.long_methods or self.long_param_lists or self.duplicate_code:
-                sg.popup("Code smells found!")    
+                sg.popup("Code smells found!")
+            else:
+                sg.popup("No code smells found!")    
         else:
             sg.popup('This code is already analyzed!')
     
