@@ -52,7 +52,7 @@ class CodeAnalyzer():
         for method_obj in self.method_analyzers:
             name, start, end, lines, _ = method_obj.get_method_attributes()
             if lines > MAX_LINES_OF_CODE:
-                long_methods.append( (name, start, end, lines) )
+                long_methods.append( (name, start, lines) )
         return long_methods
 
 

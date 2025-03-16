@@ -44,7 +44,7 @@ class SimpleGUI():
             [sg.Text('Code Smell Detector', font=BOLD_FONT)],
             [sg.Push(), sg.Text('File', size=(8, 1)), sg.Input(key='-FILEINPUT-', default_text = 'Select file to analyze', text_color=GREY_TEXT), sg.FileBrowse(), sg.Button('Open', key='-FOPEN-'), sg.Push()],
             [sg.Text('Code Display', text_color='white', background_color='magenta', font=BOLD_FONT)],
-            [sg.Push(), sg.Multiline(size=(100, 30), key='-MINPUT-', horizontal_scroll=True, write_only=True, font=CODE_FONT), sg.Push(), sg.vtop(sg.Column(self.col)), sg.Push()],
+            [sg.Push(), sg.Multiline(size=(90, 30), key='-MINPUT-', horizontal_scroll=True, write_only=True, font=CODE_FONT), sg.Push(), sg.vtop(sg.Column(self.col)), sg.Push()],
             [sg.Text('')],
             [sg.Push(), sg.Button('Analyze Code', key='-ANALYZE-'), sg.Button('Semantic Dupe Check', key='-SEMANTIC-'), sg.Button('Exit'), sg.Push()]
         ]
@@ -186,7 +186,7 @@ class SimpleGUI():
     
 
     def _get_format_list(self, format_list):
-        return [''.join(map(str, (f'LINE:{attribute[1]:>4}, DEF: {dedent(attribute[0])}', ))) for attribute in format_list if format_list]
+        return [''.join(map(str, (f'LINE:{attribute[1]:>4}, DEF: {dedent(attribute[0])}, COUNT: {attribute[2]}', ))) for attribute in format_list if format_list]
     
 
     def _format_duplicate_methods(self):
