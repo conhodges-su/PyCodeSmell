@@ -122,8 +122,8 @@ class CodeAnalyzer():
         semantic_dupe_string = completion.choices[0].message.content
         semantic_dupe_list = semantic_dupe_string.splitlines()
         for index, value in enumerate(semantic_dupe_list):
-            m1, m2 = value.split('|')
-            m1 = textwrap.dedent(m1)
-            m2 = textwrap.dedent(m2)
-            semantic_dupe_list[index] = (m1, m2)
+            method1, method2 = value.split('|')
+            method1 = textwrap.dedent(method1)
+            method2 = textwrap.dedent(method2)
+            semantic_dupe_list[index] = (method1, method2)
         return semantic_dupe_list

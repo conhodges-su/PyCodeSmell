@@ -186,18 +186,18 @@ class SimpleGUI():
     
 
     def _get_format_list(self, format_list):
-        return [''.join(map(str, (f'LINE:{f[1]:>4}, DEF: {dedent(f[0])}', ))) for f in format_list if format_list]
+        return [''.join(map(str, (f'LINE:{attribute[1]:>4}, DEF: {dedent(attribute[0])}', ))) for attribute in format_list if format_list]
     
 
     def _format_duplicate_methods(self):
         count = 0
         method_lst = []
         for dupe_rows in self.duplicate_code:
-            m1, m2, t1, t2, _ = dupe_rows
-            m1 = dedent(m1.splitlines()[0])
-            m2 = dedent(m2.splitlines()[0])
-            method_lst.append(f'LINE: {t1[0]}, #{count+1}. {m1}')
-            method_lst.append(f'LINE: {t2[0]}, #{count+1}. {m2}')
+            method1, method2, term1, term2, _ = dupe_rows
+            method1 = dedent(method1.splitlines()[0])
+            method2 = dedent(method2.splitlines()[0])
+            method_lst.append(f'LINE: {term1[0]}, #{count+1}. {method1}')
+            method_lst.append(f'LINE: {term2[0]}, #{count+1}. {method2}')
             count += 1
         return method_lst
 

@@ -34,11 +34,11 @@ class CodeRefactorer():
         methods_string_list = []
         for method_pair_data in self.dupe_code_list:
             methods_str = ''
-            m1, m2, *_ = method_pair_data
+            method1, method2, *_ = method_pair_data
             methods_str += f'{METHOD_BOLD} 1:\n'
-            methods_str += f'{m1}\n'
+            methods_str += f'{method1}\n'
             methods_str += f'{METHOD_BOLD} 2:\n'
-            methods_str += f'{m2}\n'
+            methods_str += f'{method2}\n'
             methods_string_list.append(methods_str)
         return methods_string_list
     
@@ -85,9 +85,9 @@ class CodeRefactorer():
 
     def _extract_function_names(self, idx):
         func_names_only = []
-        m1, m2, *_ = self.dupe_code_list[idx]
+        method1, method2, *_ = self.dupe_code_list[idx]
         replacement = self.refactored_code[idx]
-        for method in [m1, m2, replacement]:
+        for method in [method1, method2, replacement]:
             func_names_only.append(self._get_func_name_only(method))
         return func_names_only
 
