@@ -193,10 +193,10 @@ class SimpleGUI():
         count = 0
         method_lst = []
         for dupe_rows in self.duplicate_code:
-            method1, method2, term1, term2, _ = dupe_rows
+            method1, method2, term1, term2, jaccard = dupe_rows
             for method, termini in [(method1, term1), (method2, term2)]:
                 method_stripped = dedent(method.splitlines()[0])
-                method_lst.append((f'LINE: {termini[0]}, #{count+1}. {method_stripped}'))
+                method_lst.append((f'LINE: {termini[0]}, #{count+1}. {method_stripped}, JACCARD: {jaccard:.2f}'))
             count += 1
         return method_lst
 
