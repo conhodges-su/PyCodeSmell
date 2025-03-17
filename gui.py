@@ -13,7 +13,7 @@ class SimpleGUI():
     def __init__(self):
         self.col = self._column_list()
         self.layout = self._layout_list()
-        self.window = sg.Window('Code Smell Detector', self.layout, size=(1300,750))
+        self.window = sg.Window('Code Smell Detector', self.layout, size=(1400,750))
         self.src_code = ''
         self.filename = ''
         self.code_analyzed = False
@@ -28,14 +28,14 @@ class SimpleGUI():
     def _column_list(self):
         return [
             [sg.Text(f'Long Methods (LOC > {MAX_LINES_OF_CODE})', text_color='white', background_color='magenta', font=BOLD_FONT)],
-            [sg.Listbox(values=[], size=(60,5), key='-METHODS-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
+            [sg.Listbox(values=[], size=(70,5), key='-METHODS-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
             [sg.Text(f'Long Paramter Lists (PARAMS > {MAX_PARAMETER_COUNT})', text_color='white', background_color='magenta', font=BOLD_FONT)],
-            [sg.Listbox(values=[], size=(60,5), key='-PARAMS-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
+            [sg.Listbox(values=[], size=(70,5), key='-PARAMS-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
             [sg.Text('Duplicate Methods', text_color='white', background_color='magenta', font=BOLD_FONT)],
-            [sg.Listbox(values=[], size=(60,6), key='-DUPES-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
+            [sg.Listbox(values=[], size=(70,6), key='-DUPES-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)],
             [sg.Button('Refactor Code', key='-REFACTOR-', disabled=True, disabled_button_color='grey')],  
             [sg.Text('Semantic Duplicates', text_color='white', background_color='magenta', font=BOLD_FONT)],
-            [sg.Listbox(values=[], size=(60,8), key='-SEMANTIC-DUPES-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)]
+            [sg.Listbox(values=[], size=(70,6), key='-SEMANTIC-DUPES-', enable_events=True, select_mode=sg.LISTBOX_SELECT_MODE_SINGLE)]
         ]
 
 
@@ -44,7 +44,7 @@ class SimpleGUI():
             [sg.Text('Code Smell Detector', font=BOLD_FONT)],
             [sg.Push(), sg.Text('File', size=(8, 1)), sg.Input(key='-FILEINPUT-', default_text = 'Select file to analyze', text_color=GREY_TEXT), sg.FileBrowse(), sg.Button('Open', key='-FOPEN-'), sg.Push()],
             [sg.Text('Code Display', text_color='white', background_color='magenta', font=BOLD_FONT)],
-            [sg.Push(), sg.Multiline(size=(90, 30), key='-MINPUT-', horizontal_scroll=True, write_only=True, font=CODE_FONT), sg.Push(), sg.vtop(sg.Column(self.col)), sg.Push()],
+            [sg.Push(), sg.Multiline(size=(100, 30), key='-MINPUT-', horizontal_scroll=True, write_only=True, font=CODE_FONT), sg.Push(), sg.vtop(sg.Column(self.col)), sg.Push()],
             [sg.Text('')],
             [sg.Push(), sg.Button('Analyze Code', key='-ANALYZE-'), sg.Button('Semantic Dupe Check', key='-SEMANTIC-'), sg.Button('Exit'), sg.Push()]
         ]
@@ -177,7 +177,7 @@ class SimpleGUI():
         method_lst = self._get_format_list(self.long_methods)
         param_lst = self._get_format_list(self.long_param_lists)
         dupe_lst = self._format_duplicate_methods()
-        semantic_dupes_formatted = [elem for item in self.semantic_dupes for elem in item]
+        semantic_dupes_formatted = self._formatted_semantic_dupes()
 
         fields_to_display = [(method_lst, '-METHODS-'), (param_lst, '-PARAMS-'),
                            (dupe_lst, '-DUPES-'), (semantic_dupes_formatted, '-SEMANTIC-DUPES-')]
@@ -187,6 +187,10 @@ class SimpleGUI():
 
     def _get_format_list(self, format_list):
         return [''.join(map(str, (f'LINE:{attribute[1]:>4}, DEF: {dedent(attribute[0])}, COUNT: {attribute[2]}', ))) for attribute in format_list if format_list]
+    
+
+    def _formatted_semantic_dupes(self):
+        return [f"PAIR #{i // 2 + 1}. {elem}" for i, item in enumerate(self.semantic_dupes) for elem in item]
     
 
     def _format_duplicate_methods(self):

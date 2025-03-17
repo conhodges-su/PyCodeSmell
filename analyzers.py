@@ -118,7 +118,7 @@ class CodeAnalyzer():
 
     def semantic_dupe_check(self):
         devPrompt = get_prompt_string(SEMANTIC_DUPE_PROMPT_FILE)
-        completion = LLMRequest.sendRequest(devPrompt, self.src_code, 'gpt-4o')
+        completion = LLMRequest.sendRequest(devPrompt, self.src_code)
         semantic_dupe_string = completion.choices[0].message.content
         semantic_dupe_list = semantic_dupe_string.splitlines()
         for index, value in enumerate(semantic_dupe_list):

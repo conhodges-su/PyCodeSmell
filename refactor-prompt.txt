@@ -10,5 +10,6 @@ You MUST avoid parameter lists with more than 3 parameters.
 You MUST NOT provide code comments
 The method you provide in return MUST be less than 15 lines of code for the main callable method. 
 Do not decompose your method into smaller methods unless it is necessary to acheieve the maximum 15 lines of code per method requirement.
+DO NOT add more parameters than the original methods in the refactored method
 The content of the method MUST NOT contain backticks for formatting to codeblocks in markdown
 The content MUST NOT include 'python' indicating the language of the output
