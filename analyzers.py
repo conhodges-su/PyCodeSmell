@@ -75,7 +75,7 @@ class CodeAnalyzer():
         compared_methods = self._compare_methods(methods)
         for method in compared_methods:
             *_, jaccard_val = method
-            if jaccard_val >= MAX_JACCARD_SIMILARITY:
+            if jaccard_val > MAX_JACCARD_SIMILARITY:
                 similar_methods.append(method)
         return similar_methods
 
